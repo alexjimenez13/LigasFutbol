@@ -1,0 +1,169 @@
+﻿@{
+    ViewData["Title"] = "Jugadores";
+    Layout = "_Layout";
+}
+
+<!-- DataTables CSS -->
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css" />
+<link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.4.1/css/responsive.dataTables.min.css" />
+
+<div class="row m-4">
+    <div class="col-sm-12">
+        <div class="card">
+            <div class="card-header">Administración de Jugadores</div>
+            <div class="card-body">
+                <button class="btn btn-success btn-sm mb-3" onclick="abrirModal(0)">Agregar Nuevo</button>
+                <table id="tblJugador" class="display nowrap" style="width:100%">
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Apellido</th>
+                            <th>F. Nacimiento</th>
+                            <th>Posición</th>
+                            <th>Equipo</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Jugador -->
+<div class="modal fade" id="FormModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Jugador</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="txtJugadorId" />
+                <div class="mb-3">
+                    <label for="txtNombre" class="form-label">Nombre:</label>
+                    <input type="text" id="txtNombre" class="form-control" />
+                </div>
+                <div class="mb-3">
+                    <label for="txtApellido" class="form-label">Apellido:</label>
+                    <input type="text" id="txtApellido" class="form-control" />
+                </div>
+                <div class="mb-3">
+                    <label for="txtFechaNacimiento" class="form-label">Fecha de Nacimiento:</label>
+                    <input type="date" id="txtFechaNacimiento" class="form-control" />
+                </div>
+                <div class="mb-3">
+                    <label for="ddlPosicion" class="form-label">Posición:</label>
+                    <select id="ddlPosicion" class="form-select"></select>
+                </div>
+                <div class="mb-3">
+                    <label for="ddlEquipo" class="form-label">Equipo:</label>
+                    <select id="ddlEquipo" class="form-select"></select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-primary" onclick="Guardar()">Guardar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section scripts {
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/responsive/2.4.1/js/dataTables.responsive.min.js"></script>
+    <script>
+        let tablaJugador;
+        let posiciones = [];
+        let equipos    = [];
+
+        $(document).ready(function() {
+
+            $.get('@Url.Action("GetPosiciones", "Jugador")', data => posiciones = data);
+            $.get('@Url.Action("GetEquipos", "Jugador")', data => equipos    = data);
+
+            tablaJugador = $('#tblJugador').DataTable({
+                responsive: true,
+                ajax: {
+                    url: '@Url.Action("Listar", "Jugador")',
+                    dataSrc: 'data',
+                    error: xhr => { console.error(xhr.responseText); alert('Error cargando jugadores'); }
+                },
+                columns: [
+                    { data: 'nombre' },
+                    { data: 'apellido' },
+                    { data: 'fechaNacimiento' },
+                    { data: 'posicionNombre' },
+                    { data: 'equipoNombre' },
+                    {
+                        data: 'jugadorId', render: id =>
+                            `<button class='btn btn-sm btn-primary me-1' onclick='abrirModal(${id})'>✎</button>` +
+                            `<button class='btn btn-sm btn-danger' onclick='Eliminar(${id})'>🗑</button>`,
+                        orderable: false,
+                        searchable: false,
+                        width: '100px'
+                    }
+                ],
+                dom: 'Bfrtip',
+                buttons: [
+                    { text: 'Agregar Nuevo', className: 'btn btn-success btn-sm', action: () => abrirModal(0) }
+                ]
+            });
+        });
+
+        function abrirModal(id) {
+            $('#txtJugadorId').val(id);
+            const ddlP = $('#ddlPosicion').empty().append('<option value="">--Seleccione--</option>');
+            posiciones.forEach(p => ddlP.append(`<option value='${p.posicionId}'>${p.nombre}</option>`));
+            const ddlE = $('#ddlEquipo').empty().append('<option value="">--Seleccione--</option>');
+            equipos.forEach(e => ddlE.append(`<option value='${e.equipoId}'>${e.nombre}</option>`));
+
+            if (id) {
+                $.get(`@Url.Action("Obtener", "Jugador")?id=${id}`, data => {
+                    $('#txtNombre').val(data.nombre);
+                    $('#txtApellido').val(data.apellido);
+                    $('#txtFechaNacimiento').val(data.fechaNacimiento);
+                    $('#ddlPosicion').val(data.posicionId);
+                    $('#ddlEquipo').val(data.equipoId);
+                });
+            } else {
+                $('#txtNombre,#txtApellido,#txtFechaNacimiento').val('');
+                ddlP.val(''); ddlE.val('');
+            }
+            bootstrap.Modal.getOrCreateInstance(document.getElementById('FormModal')).show();
+        }
+
+        function Guardar() {
+            const model = {
+                jugadorId       : parseInt($('#txtJugadorId').val()),
+                nombre          : $('#txtNombre').val(),
+                apellido        : $('#txtApellido').val(),
+                fechaNacimiento : $('#txtFechaNacimiento').val(),
+                posicionId      : parseInt($('#ddlPosicion').val()) || null,
+                equipoId        : parseInt($('#ddlEquipo').val())    || null
+            };
+            $.ajax({
+                url        : '@Url.Action("Guardar", "Jugador")',
+                type       : 'POST',
+                contentType: 'application/json',
+                data       : JSON.stringify(model),
+                success    : res => {
+                    if (res.resultado) {
+                        tablaJugador.ajax.reload();
+                        bootstrap.Modal.getOrCreateInstance(document.getElementById('FormModal')).hide();
+                    } else alert('No guardado');
+                },
+                error      : err => console.error(err)
+            });
+        }
+
+        function Eliminar(id) {
+            if (!confirm('¿Eliminar este jugador?')) return;
+            $.get(`@Url.Action("Eliminar", "Jugador")?id=${id}`, res => {
+                if (res.resultado) tablaJugador.ajax.reload();
+                else alert('No eliminado');
+            });
+        }
+    </script>
+}

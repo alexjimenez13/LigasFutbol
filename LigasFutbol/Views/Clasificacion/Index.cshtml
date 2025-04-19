@@ -1,0 +1,91 @@
+﻿@{
+    ViewData["Title"] = "Tabla de Posiciones";
+    Layout = "_Layout";
+}
+
+<div class="row m-4">
+    <div class="col-md-4">
+        <label for="ddlLiga" class="form-label">Seleccione Liga:</label>
+        <select id="ddlLiga" class="form-select">
+            <option value="">--Seleccione--</option>
+        </select>
+    </div>
+</div>
+
+<div class="row m-4">
+    <div class="col-sm-12">
+        <table id="tblClasificacion" class="table table-striped display nowrap" style="width:100%">
+            <thead>
+                <tr>
+                    <th>Posición</th>
+                    <th>Equipo</th>
+                    <th>PJ</th>
+                    <th>G</th>
+                    <th>E</th>
+                    <th>P</th>
+                    <th>GF</th>
+                    <th>GC</th>
+                    <th>DG</th>
+                    <th>Puntos</th>
+                </tr>
+            </thead>
+        </table>
+    </div>
+</div>
+
+@section scripts {
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/responsive/2.4.1/js/dataTables.responsive.min.js"></script>
+
+    <link rel="stylesheet"
+      href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css" />
+<link rel="stylesheet"
+      href="https://cdn.datatables.net/responsive/2.4.1/css/responsive.dataTables.min.css" />
+
+    <script>
+        $(document).ready(function () {
+            var tabla = $('#tblClasificacion').DataTable({
+                responsive: true,
+                ajax: {
+                    url: '@Url.Action("Listar", "Clasificacion")?ligaId=0',
+                    dataSrc: 'data',
+                    error: function (xhr) {
+                        console.error('Error Ajax Clasificacion/Listar:', xhr.responseText);
+                        alert('Error cargando clasificación');
+                    }
+                },
+                columns: [
+                    { data: 'posicion' },
+                    { data: 'equipo' },
+                    { data: 'partidosJugados' },
+                    { data: 'g' },
+                    { data: 'e' },
+                    { data: 'p' },
+                    { data: 'gf' },
+                    { data: 'gc' },
+                    { data: 'dg' },
+                    { data: 'puntos' }
+                ],
+                order: [[0, 'asc']],
+                dom: 'Bfrtip'
+            });
+
+            $.get('@Url.Action("GetLigas", "Clasificacion")', function (data) {
+                var ddl = $('#ddlLiga');
+                data.forEach(function (l) {
+                    ddl.append(`<option value='${l.ligaId}'>${l.nombre}</option>`);
+                });
+            });
+
+            $('#ddlLiga').on('change', function () {
+                var ligaId = $(this).val();
+                if (ligaId) {
+                    tabla.ajax.url(`@Url.Action("Listar", "Clasificacion")?ligaId=${ligaId}`).load();
+                } else {
+                    tabla.clear().draw();
+                }
+            });
+        });
+    </script>
+}

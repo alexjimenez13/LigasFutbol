@@ -2,15 +2,15 @@
 {
     public class Clasificacion
     {
-        public int ClasificacionId { get; set; }
-        public int LigaId { get; set; }
         public int EquipoId { get; set; }
+        public string NombreEquipo { get; set; }
+        public int PartidosJugados { get; set; }
+        public int Ganados { get; set; }
+        public int Empatados { get; set; }
+        public int Perdidos { get; set; }
+        public int GolesAFavor { get; set; }
+        public int GolesEnContra { get; set; }
+        public int DiferenciaGoles { get; set; }
         public int Puntos { get; set; }
-        public int PJ { get; set; }  // Partidos Jugados
-        public int PG { get; set; }  // Partidos Ganados
-        public int PE { get; set; }  // Partidos Empatados
-        public int PP { get; set; }  // Partidos Perdidos
-        public int GF { get; set; }  // Goles a Favor
-        public int GC { get; set; }  // Goles en Contra
     }
 }

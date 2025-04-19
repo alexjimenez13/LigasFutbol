@@ -1,0 +1,178 @@
+﻿
+
+@{
+    ViewData["Title"] = "Resultados";
+    Layout = "_Layout";
+}
+
+<!-- DataTables CSS -->
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css" />
+<link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.4.1/css/responsive.dataTables.min.css" />
+
+<div class="row m-4">
+    <div class="col-sm-12">
+        <div class="card">
+            <div class="card-header">Administración de Resultados</div>
+            <div class="card-body">
+                <button class="btn btn-success btn-sm mb-3" onclick="abrirModalResultado(0)">Agregar Nuevo</button>
+                <table id="tblResultado" class="display nowrap" style="width:100%">
+                    <thead>
+                        <tr>
+                            <th>Partido</th>
+                            <th>Goles Local</th>
+                            <th>Goles Visitante</th>
+                            <th>Resultado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Resultado -->
+<div class="modal fade" id="FormModalResultado" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Resultado</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="txtResultadoId" />
+                <div class="mb-3">
+                    <label for="ddlPartido" class="form-label">Partido:</label>
+                    <select id="ddlPartido" class="form-select"></select>
+                </div>
+                <div class="mb-3">
+                    <label for="txtGolesLocal" class="form-label">Goles Local:</label>
+                    <input type="number" id="txtGolesLocal" class="form-control" min="0" />
+                </div>
+                <div class="mb-3">
+                    <label for="txtGolesVisitante" class="form-label">Goles Visitante:</label>
+                    <input type="number" id="txtGolesVisitante" class="form-control" min="0" />
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-primary" onclick="GuardarResultado()">Guardar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section scripts {
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/responsive/2.4.1/js/dataTables.responsive.min.js"></script>
+    <script>
+        let tablaResultado;
+        let partidos = [];
+
+        $(document).ready(function() {
+            $.get('@Url.Action("GetPartidos","Resultado")', function(data) {
+                partidos = data;
+            });
+
+            tablaResultado = $('#tblResultado').DataTable({
+                responsive: true,
+                ajax: {
+                    url: '@Url.Action("Listar","Resultado")',
+                    dataSrc: 'data',
+                    error: function(xhr) {
+                        console.error('Error Ajax Resultado/Listar:', xhr.responseText);
+                        alert('Error cargando resultados');
+                    }
+                },
+                columns: [
+                    { data: 'partido' },
+                    { data: 'golesLocal' },
+                    { data: 'golesVisitante' },
+                    { data: 'resultadoTexto' },
+                    {
+                        data: 'resultadoId',
+                        render: function(id) {
+                            return `<button class='btn btn-sm btn-primary me-1' onclick='abrirModalResultado(${id})'>✎</button>` +
+                                   `<button class='btn btn-sm btn-danger' onclick='EliminarResultado(${id})'>🗑</button>`;
+                        },
+                        orderable: false,
+                        searchable: false,
+                        width: '100px'
+                    }
+                ],
+                dom: 'Bfrtip',
+                buttons: [
+                    {
+                        text: 'Agregar Nuevo',
+                        className: 'btn btn-success btn-sm',
+                        action: function() { abrirModalResultado(0); }
+                    }
+                ]
+            });
+        });
+
+        function abrirModalResultado(id) {
+            $('#txtResultadoId').val(id);
+            const ddl = $('#ddlPartido').empty().append('<option value="">--Seleccione--</option>');
+
+            if (id === 0) {
+                partidos.filter(p => !p.tieneResultado)
+                        .forEach(p => ddl.append(`<option value='${p.partidoId}'>${p.descripcion}</option>`));
+            } else {
+                partidos.forEach(p => ddl.append(`<option value='${p.partidoId}'>${p.descripcion}</option>`));
+            }
+
+            if (id) {
+                $.get(`@Url.Action("Obtener","Resultado")?id=${id}`, function(data) {
+                    $('#ddlPartido').val(data.partidoId);
+                    $('#txtGolesLocal').val(data.golesLocal);
+                    $('#txtGolesVisitante').val(data.golesVisitante);
+                });
+            } else {
+                ddl.val('');
+                $('#txtGolesLocal, #txtGolesVisitante').val(0);
+            }
+
+            bootstrap.Modal.getOrCreateInstance(
+                document.getElementById('FormModalResultado')
+            ).show();
+        }
+
+        function GuardarResultado() {
+            const model = {
+                resultadoId: parseInt($('#txtResultadoId').val()),
+                partidoId: parseInt($('#ddlPartido').val()) || null,
+                golesLocal: parseInt($('#txtGolesLocal').val()) || 0,
+                golesVisita: parseInt($('#txtGolesVisitante').val()) || 0
+            };
+            $.ajax({
+                url: '@Url.Action("Guardar","Resultado")',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(model),
+                success: function(res) {
+                    if (res.resultado) {
+                        tablaResultado.ajax.reload();
+                        bootstrap.Modal.getOrCreateInstance(
+                            document.getElementById('FormModalResultado')
+                        ).hide();
+                    } else {
+                        alert('No se pudo guardar el resultado');
+                    }
+                },
+                error: function(err) {
+                    console.error('Error al guardar resultado:', err);
+                }
+            });
+        }
+
+        function EliminarResultado(id) {
+            if (!confirm('¿Eliminar este resultado?')) return;
+            $.get(`@Url.Action("Eliminar","Resultado")?id=${id}`, function(res) {
+                if (res.resultado) tablaResultado.ajax.reload();
+                else alert('No se pudo eliminar');
+            });
+        }
+    </script>
+}

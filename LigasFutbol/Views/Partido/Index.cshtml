@@ -1,0 +1,183 @@
+﻿@{
+    ViewData["Title"] = "Partidos";
+    Layout = "_Layout";
+}
+
+<!-- DataTables CSS -->
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css" />
+<link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.4.1/css/responsive.dataTables.min.css" />
+
+<div class="row m-4">
+    <div class="col-sm-12">
+        <div class="card">
+            <div class="card-header">Administración de Partidos</div>
+            <div class="card-body">
+                <button class="btn btn-success btn-sm mb-3" onclick="abrirModalPartido(0)">Agregar Nuevo</button>
+                <table id="tblPartido" class="display nowrap" style="width:100%">
+                    <thead>
+                        <tr>
+                            <th>Liga</th>
+                            <th>Local</th>
+                            <th>Visitante</th>
+                            <th>Fecha / Hora</th>
+                            <th>Activo</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Partido -->
+<div class="modal fade" id="FormModalPartido" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Partido</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="txtPartidoId" />
+                <div class="mb-3">
+                    <label for="ddlLiga" class="form-label">Liga:</label>
+                    <select id="ddlLiga" class="form-select"></select>
+                </div>
+                <div class="mb-3">
+                    <label for="ddlLocal" class="form-label">Equipo Local:</label>
+                    <select id="ddlLocal" class="form-select"></select>
+                </div>
+                <div class="mb-3">
+                    <label for="ddlVisitante" class="form-label">Equipo Visitante:</label>
+                    <select id="ddlVisitante" class="form-select"></select>
+                </div>
+                <div class="mb-3">
+                    <label for="txtFechaHora" class="form-label">Fecha / Hora:</label>
+                    <input type="datetime-local" id="txtFechaHora" class="form-control" />
+                </div>
+                <div class="form-check mt-3">
+                    <input type="checkbox" class="form-check-input" id="chkEstadoPartido" checked />
+                    <label class="form-check-label" for="chkEstadoPartido">Activo</label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-primary" onclick="GuardarPartido()">Guardar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section scripts {
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/responsive/2.4.1/js/dataTables.responsive.min.js"></script>
+    <script>
+        let tablaPartido;
+        let ligas = [];
+        let equipos = [];
+
+        $(document).ready(function() {
+          $.get('@Url.Action("GetLigas", "Partido")', data => ligas = data);
+          $.get('@Url.Action("GetEquipos", "Partido")', data => equipos = data);
+
+          tablaPartido = $('#tblPartido').DataTable({
+            responsive: true,
+            ajax: {
+              url: '@Url.Action("Listar", "Partido")',
+              dataSrc: 'data',
+              error: xhr => { console.error(xhr.responseText); alert('Error cargando partidos'); }
+            },
+            columns: [
+              { data: 'ligaNombre' },
+              { data: 'equipoLocalNombre' },
+              { data: 'equipoVisitanteNombre' },
+              { data: 'fechaHora' },
+              { data: 'estado', render: e => e ? 'Sí' : 'No' },
+              { data: 'partidoId', render: id =>
+                  `<button class='btn btn-sm btn-primary me-1' onclick='abrirModalPartido(${id})'>✎</button>` +
+                  `<button class='btn btn-sm btn-danger' onclick='EliminarPartido(${id})'>🗑</button>`,
+                orderable: false, searchable: false, width: '100px'
+              }
+            ],
+            dom: 'Bfrtip',
+            buttons: [
+              { text: 'Agregar Nuevo', className: 'btn btn-success btn-sm', action: () => abrirModalPartido(0) }
+            ]
+          });
+
+          $('#ddlLiga').on('change', function() {
+            filtrarEquipos(parseInt($(this).val()));
+          });
+        });
+
+        function filtrarEquipos(ligaId) {
+          const locales    = $('#ddlLocal').empty().append('<option value="">--Seleccione--</option>');
+          const visitantes = $('#ddlVisitante').empty().append('<option value="">--Seleccione--</option>');
+          equipos.filter(e => e.ligaId === ligaId)
+                 .forEach(e => {
+                   locales.append(`<option value='${e.equipoId}'>${e.nombre}</option>`);
+                   visitantes.append(`<option value='${e.equipoId}'>${e.nombre}</option>`);
+                 });
+        }
+
+        function abrirModalPartido(id) {
+          $('#txtPartidoId').val(id);
+          const ddlLiga = $('#ddlLiga').empty().append('<option value="">--Seleccione--</option>');
+          ligas.forEach(l => ddlLiga.append(`<option value='${l.ligaId}'>${l.nombre}</option>`));
+
+          if (id) {
+            $.get(`@Url.Action("Obtener", "Partido")?id=${id}`, data => {
+              ddlLiga.val(data.ligaId);
+              filtrarEquipos(data.ligaId);
+              $('#ddlLocal').val(data.equipoLocalId);
+              $('#ddlVisitante').val(data.equipoVisitanteId);
+              $('#txtFechaHora').val(data.fechaHora);
+              $('#chkEstadoPartido').prop('checked', data.estado);
+            });
+          } else {
+            ddlLiga.val('');
+            $('#ddlLocal,#ddlVisitante').empty().append('<option value="">--Seleccione--</option>');
+            $('#txtFechaHora').val('');
+            $('#chkEstadoPartido').prop('checked', true);
+          }
+
+          bootstrap.Modal.getOrCreateInstance(document.getElementById('FormModalPartido')).show();
+        }
+
+        function GuardarPartido() {
+          const model = {
+            partidoId         : parseInt($('#txtPartidoId').val()),
+            ligaId            : parseInt($('#ddlLiga').val())            || null,
+            equipoLocalId     : parseInt($('#ddlLocal').val())           || null,
+            equipoVisitanteId : parseInt($('#ddlVisitante').val())       || null,
+            fechaHora         : $('#txtFechaHora').val(),
+            estado            : $('#chkEstadoPartido').is(':checked')
+          };
+          $.ajax({
+            url       : '@Url.Action("Guardar", "Partido")',
+            type      : 'POST',
+            contentType: 'application/json',
+            data      : JSON.stringify(model),
+            success   : res => {
+              if (res.resultado) {
+                tablaPartido.ajax.reload();
+                bootstrap.Modal.getOrCreateInstance(document.getElementById('FormModalPartido')).hide();
+              } else {
+                alert('No se pudo guardar el partido');
+              }
+            },
+            error     : err => console.error('Error al guardar partido:', err)
+          });
+        }
+
+        function EliminarPartido(id) {
+          if (!confirm('¿Eliminar este partido?')) return;
+          $.get(`@Url.Action("Eliminar", "Partido")?id=${id}`, res => {
+            if (res.resultado) tablaPartido.ajax.reload();
+            else alert('No se pudo eliminar');
+          });
+        }
+    </script>
+}

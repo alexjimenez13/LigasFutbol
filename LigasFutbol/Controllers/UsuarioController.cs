@@ -15,14 +15,12 @@ namespace LigasFutbol.Controllers
             _connectionString = configuration.GetConnectionString("CONEXION_DB");
         }
 
-        // GET: /Usuario/Registro
         [HttpGet]
         public IActionResult Registro()
         {
             return View();
         }
 
-        // POST: /Usuario/Registro
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult Registro(Usuario model)
@@ -30,7 +28,6 @@ namespace LigasFutbol.Controllers
             if (!ModelState.IsValid)
                 return View(model);
 
-            // Verificar si el correo ya está registrado
             bool existe;
             using (var con = new SqlConnection(_connectionString))
             {
@@ -49,10 +46,7 @@ namespace LigasFutbol.Controllers
                 return View(model);
             }
 
-            // Encriptar contraseña
             var hash = ConvertirSha256(model.CONTRASENA);
-
-            // Insertar nuevo usuario
             using (var con = new SqlConnection(_connectionString))
             {
                 con.Open();
@@ -74,14 +68,12 @@ namespace LigasFutbol.Controllers
             return RedirectToAction("Login");
         }
 
-        // GET: /Usuario/Login
         [HttpGet]
         public IActionResult Login()
         {
             return View();
         }
 
-        // POST: /Usuario/Login
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult Login(string NOMBRE_USUARIO, string CONTRASENA)
@@ -131,21 +123,18 @@ namespace LigasFutbol.Controllers
                 return View();
             }
 
-            // Guardar en sesión
             HttpContext.Session.SetInt32("UsuarioId", usuario.Id);
             HttpContext.Session.SetString("NOMBRE_USUARIO", usuario.NOMBRE_USUARIO);
 
             return RedirectToAction("Index", "Home");
         }
 
-        // GET: /Usuario/OlvidoContraseña
         [HttpGet]
         public IActionResult OlvidoContraseña()
         {
             return View();
         }
 
-        // POST: /Usuario/OlvidoContraseña
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult OlvidoContraseña(string CORREO)
@@ -191,7 +180,6 @@ namespace LigasFutbol.Controllers
             return View();
         }
 
-        // GET: /Usuario/CambioContraseña
         [HttpGet]
         public IActionResult CambioContraseña()
         {
@@ -200,7 +188,6 @@ namespace LigasFutbol.Controllers
             return View();
         }
 
-        // POST: /Usuario/CambioContraseña
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult CambioContraseña(string contraseñaActual, string nuevaContraseña)
@@ -245,7 +232,6 @@ namespace LigasFutbol.Controllers
             return View();
         }
 
-        // GET: /Usuario/Restablecer?token=...
         [HttpGet]
         public IActionResult Restablecer(string token)
         {
@@ -256,7 +242,6 @@ namespace LigasFutbol.Controllers
             return View();
         }
 
-        // POST: /Usuario/Restablecer
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult Restablecer(string token, string nuevaContraseña)
@@ -302,7 +287,6 @@ namespace LigasFutbol.Controllers
             return RedirectToAction("Login");
         }
 
-        // GET: /Usuario/Logout
         [HttpGet]
         public IActionResult Logout()
         {
@@ -310,7 +294,6 @@ namespace LigasFutbol.Controllers
             return RedirectToAction("Login");
         }
 
-        // Auxiliar: SHA256
         private string ConvertirSha256(string texto)
         {
             using var sha = SHA256.Create();

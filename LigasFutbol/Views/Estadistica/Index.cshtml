@@ -1,0 +1,209 @@
+﻿@{
+    ViewData["Title"] = "Estadísticas";
+    Layout = "_Layout";
+}
+
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css" />
+<link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.4.1/css/responsive.dataTables.min.css" />
+
+<div class="row m-4">
+    <div class="col-sm-12">
+        <div class="card">
+            <div class="card-header">Administración de Estadísticas</div>
+            <div class="card-body">
+                <button class="btn btn-success btn-sm mb-3" onclick="abrirModal(0)">
+                    Agregar Nuevo
+                </button>
+                <table id="tblEstadistica" class="display nowrap" style="width:100%">
+                    <thead>
+                        <tr>
+                            <th>Partido</th>
+                            <th>Jugador</th>
+                            <th>Goles</th>
+                            <th>Asistencias</th>
+                            <th>Tarjetas A</th>
+                            <th>Tarjetas R</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="FormModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5 class="modal-title">Estadística</h5>
+                <button type="button"
+                        class="btn-close"
+                        data-bs-dismiss="modal"
+                        aria-label="Close">
+                </button>
+            </div>
+
+            <div class="modal-body">
+                <input type="hidden" id="txtEstadisticaId" />
+
+                <div class="mb-3">
+                    <label for="ddlJugador" class="form-label">Jugador:</label>
+                    <select id="ddlJugador"
+                            class="form-select"
+                            onchange="cargarPartidosPorJugador(this.value)">
+                        <option value="">--Seleccione--</option>
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label for="ddlPartido" class="form-label">Partido:</label>
+                    <select id="ddlPartido" class="form-select">
+                        <option value="">--Seleccione--</option>
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label for="txtGoles" class="form-label">Goles:</label>
+                    <input type="number" id="txtGoles" class="form-control" min="0" />
+                </div>
+                <div class="mb-3">
+                    <label for="txtAsistencias" class="form-label">Asistencias:</label>
+                    <input type="number" id="txtAsistencias" class="form-control" min="0" />
+                </div>
+                <div class="mb-3">
+                    <label for="txtTarjetasA" class="form-label">Tarjetas Amarillas:</label>
+                    <input type="number" id="txtTarjetasA" class="form-control" min="0" />
+                </div>
+                <div class="mb-3">
+                    <label for="txtTarjetasR" class="form-label">Tarjetas Rojas:</label>
+                    <input type="number" id="txtTarjetasR" class="form-control" min="0" />
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button"
+                        class="btn btn-secondary"
+                        data-bs-dismiss="modal">
+                    Cerrar
+                </button>
+                <button type="button"
+                        class="btn btn-primary"
+                        onclick="Guardar()">
+                    Guardar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section scripts {
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/responsive/2.4.1/js/dataTables.responsive.min.js"></script>
+
+    <script>
+        let tabla;
+        $(document).ready(function() {
+          tabla = $('#tblEstadistica').DataTable({
+            responsive: true,
+            ajax: {
+              url: '@Url.Action("Listar", "Estadistica")',
+              dataSrc: 'data'
+            },
+            columns: [
+              { data: 'partido' },
+              { data: 'jugador' },
+              { data: 'goles' },
+              { data: 'asistencias' },
+              { data: 'tarjetasAmarillas' },
+              { data: 'tarjetasRojas' },
+              {
+                data: 'estadisticaId',
+                render: id =>
+                  `<button class="btn btn-sm btn-primary me-1" onclick="abrirModal(${id})">✎</button>` +
+                  `<button class="btn btn-sm btn-danger" onclick="Eliminar(${id})">🗑</button>`,
+                orderable: false,
+                searchable: false,
+                width: '100px'
+              }
+            ],
+            dom: 'Bfrtip',
+            buttons: [
+              {
+                text: 'Agregar Nuevo',
+                className: 'btn btn-success btn-sm',
+                action: () => abrirModal(0)
+              }
+            ]
+          });
+        });
+
+        function abrirModal(id) {
+          $('#txtEstadisticaId').val(id);
+          $.get('@Url.Action("GetJugadores", "Estadistica")', data => {
+            const ddlJ = $('#ddlJugador').empty().append('<option value="">--Seleccione--</option>');
+            data.forEach(j => ddlJ.append(`<option value="${j.jugadorId}">${j.nombre}</option>`));
+
+            if (id) {
+              $.get(`@Url.Action("Obtener", "Estadistica")?id=${id}`, e => {
+                ddlJ.val(e.jugadorId);
+                cargarPartidosPorJugador(e.jugadorId, e.partidoId);
+                $('#txtGoles').val(e.goles);
+                $('#txtAsistencias').val(e.asistencias);
+                $('#txtTarjetasA').val(e.tarjetasAmarillas);
+                $('#txtTarjetasR').val(e.tarjetasRojas);
+              });
+            } else {
+              // nuevo
+              $('#ddlPartido').empty().append('<option value="">--Seleccione--</option>');
+              $('#txtGoles,#txtAsistencias,#txtTarjetasA,#txtTarjetasR').val(0);
+            }
+
+            bootstrap.Modal.getOrCreateInstance(document.getElementById('FormModal')).show();
+          });
+        }
+
+        function cargarPartidosPorJugador(jugadorId, seleccionado) {
+          const ddlP = $('#ddlPartido').empty().append('<option value="">--Seleccione--</option>');
+          if (!jugadorId) return;
+          $.get(`@Url.Action("GetPartidosPorJugador", "Estadistica")?jugadorId=${jugadorId}`, data => {
+            data.forEach(p => ddlP.append(`<option value="${p.partidoId}">${p.descripcion}</option>`));
+            if (seleccionado) ddlP.val(seleccionado);
+          });
+        }
+
+        function Guardar() {
+          const model = {
+            estadisticaId: +$('#txtEstadisticaId').val(),
+            jugadorId:     +$('#ddlJugador').val() || null,
+            partidoId:     +$('#ddlPartido').val() || null,
+            goles:         +$('#txtGoles').val() || 0,
+            asistencias:   +$('#txtAsistencias').val() || 0,
+            tarjetasAmarillas: +$('#txtTarjetasA').val() || 0,
+            tarjetasRojas:     +$('#txtTarjetasR').val() || 0
+          };
+          $.ajax({
+            url: '@Url.Action("Guardar", "Estadistica")',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(model),
+            success: r => {
+              if (r.resultado) {
+                tabla.ajax.reload();
+                bootstrap.Modal.getOrCreateInstance(document.getElementById('FormModal')).hide();
+              }
+            }
+          });
+        }
+
+        function Eliminar(id) {
+          if (!confirm('¿Eliminar esta estadística?')) return;
+          $.get(`@Url.Action("Eliminar", "Estadistica")?id=${id}`, r => {
+            if (r.resultado) tabla.ajax.reload();
+          });
+        }
+    </script>
+}

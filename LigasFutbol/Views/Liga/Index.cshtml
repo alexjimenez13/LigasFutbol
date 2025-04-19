@@ -1,0 +1,162 @@
+﻿@{
+    ViewData["Title"] = "Ligas";
+    Layout = "_Layout";
+}
+
+<!-- DataTables CSS -->
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css" />
+<link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.4.1/css/responsive.dataTables.min.css" />
+
+<div class="row m-4">
+    <div class="col-sm-12">
+        <div class="card">
+            <div class="card-header">Administración de Ligas</div>
+            <div class="card-body">
+                <button class="btn btn-success btn-sm mb-3" onclick="abrirModalLiga(0)">Agregar Nueva</button>
+                <table id="tblLiga" class="display nowrap" style="width:100%">
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Descripción</th>
+                            <th>Fecha Inicio</th>
+                            <th>Fecha Fin</th>
+                            <th>Activo</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Liga -->
+<div class="modal fade" id="FormModalLiga" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Liga</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="txtLigaId" />
+                <div class="mb-3">
+                    <label for="txtNombre" class="form-label">Nombre:</label>
+                    <input type="text" id="txtNombre" class="form-control" />
+                </div>
+                <div class="mb-3">
+                    <label for="txtDescripcion" class="form-label">Descripción:</label>
+                    <textarea id="txtDescripcion" class="form-control"></textarea>
+                </div>
+                <div class="row">
+                    <div class="col">
+                        <label for="txtFechaInicio" class="form-label">Fecha Inicio:</label>
+                        <input type="date" id="txtFechaInicio" class="form-control" />
+                    </div>
+                    <div class="col">
+                        <label for="txtFechaFin" class="form-label">Fecha Fin:</label>
+                        <input type="date" id="txtFechaFin" class="form-control" />
+                    </div>
+                </div>
+                <div class="form-check mt-3">
+                    <input type="checkbox" class="form-check-input" id="chkEstado" checked />
+                    <label class="form-check-label" for="chkEstado">Activo</label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-primary" onclick="GuardarLiga()">Guardar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section scripts {
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/responsive/2.4.1/js/dataTables.responsive.min.js"></script>
+    <script>
+        let tablaLiga;
+        $(document).ready(function() {
+          tablaLiga = $('#tblLiga').DataTable({
+            responsive: true,
+            ajax: {
+              url: '@Url.Action("Listar", "Liga")',
+              dataSrc: 'data',
+              error: xhr => {
+                console.error('Error Ajax Liga/Listar:', xhr.responseText);
+                alert('Error cargando ligas');
+              }
+            },
+            columns: [
+              { data: 'nombre' },
+              { data: 'descripcion' },
+              { data: 'fechaInicio' },
+              { data: 'fechaFin' },
+              { data: 'estado', render: e => e ? 'Sí' : 'No' },
+              {
+                data: 'ligaId', render: id =>
+                  `<button class='btn btn-sm btn-primary me-1' onclick='abrirModalLiga(${id})'>✎</button>` +
+                  `<button class='btn btn-sm btn-danger' onclick='EliminarLiga(${id})'>🗑</button>`,
+                orderable:false, searchable:false, width:'100px'
+              }
+            ],
+            dom: 'Bfrtip',
+            buttons: [
+              { text: 'Agregar Nueva', className: 'btn btn-success btn-sm', action: () => abrirModalLiga(0) }
+            ]
+          });
+        });
+
+        function abrirModalLiga(id) {
+          $('#txtLigaId').val(id);
+          if (id !== 0) {
+            $.get(`@Url.Action("Obtener", "Liga")?id=${id}`, data => {
+              $('#txtNombre').val(data.nombre);
+              $('#txtDescripcion').val(data.descripcion);
+              $('#txtFechaInicio').val(data.fechaInicio);
+              $('#txtFechaFin').val(data.fechaFin);
+              $('#chkEstado').prop('checked', data.estado);
+            });
+          } else {
+            $('#txtNombre,#txtDescripcion,#txtFechaInicio,#txtFechaFin').val('');
+            $('#chkEstado').prop('checked', true);
+          }
+          bootstrap.Modal.getOrCreateInstance(document.getElementById('FormModalLiga')).show();
+        }
+
+        function GuardarLiga() {
+          const model = {
+            ligaId: parseInt($('#txtLigaId').val()),
+            nombre: $('#txtNombre').val(),
+            descripcion: $('#txtDescripcion').val(),
+            fechaInicio: $('#txtFechaInicio').val(),
+            fechaFin: $('#txtFechaFin').val() || null,
+            estado: $('#chkEstado').is(':checked')
+          };
+          $.ajax({
+            url: '@Url.Action("Guardar", "Liga")',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(model),
+            success: res => {
+              if (res.resultado) {
+                tablaLiga.ajax.reload();
+                bootstrap.Modal.getOrCreateInstance(document.getElementById('FormModalLiga')).hide();
+              } else {
+                alert('No se pudo guardar la liga');
+              }
+            },
+            error: err => console.error('Error al guardar liga:', err)
+          });
+        }
+
+        function EliminarLiga(id) {
+          if (!confirm('¿Eliminar esta liga?')) return;
+          $.get(`@Url.Action("Eliminar", "Liga")?id=${id}`, res => {
+            if (res.resultado) tablaLiga.ajax.reload();
+            else alert('No se pudo eliminar');
+          });
+        }
+    </script>
+}

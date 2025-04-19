@@ -1,5 +1,10 @@
+using LigasFutbol.Data;
+using Microsoft.EntityFrameworkCore;
+
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews();
+
+builder.Services.AddDbContext<AppDbContext>(opts => opts.UseSqlServer(builder.Configuration.GetConnectionString("CONEXION_DB")));
 
 var app = builder.Build();
 

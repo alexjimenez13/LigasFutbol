@@ -1,0 +1,155 @@
+﻿@{
+    ViewData["Title"] = "Sesiones de Entrenamiento";
+    Layout = "_Layout";
+}
+
+<!-- DataTables CSS -->
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css" />
+<link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.4.1/css/responsive.dataTables.min.css" />
+
+<div class="row m-4">
+    <div class="col-sm-12">
+        <div class="card">
+            <div class="card-header">Administración de Entrenamientos</div>
+            <div class="card-body">
+                <button class="btn btn-success btn-sm mb-3" onclick="abrirModal(0)">Agregar Nuevo</button>
+                <table id="tblEntrenamiento" class="display nowrap" style="width:100%">
+                    <thead>
+                        <tr>
+                            <th>Equipo</th>
+                            <th>Fecha y Hora</th>
+                            <th>Ubicación</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="FormModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Sesión de Entrenamiento</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="txtEntrenamientoId" />
+                <div class="mb-3">
+                    <label for="ddlEquipo" class="form-label">Equipo:</label>
+                    <select id="ddlEquipo" class="form-select"></select>
+                </div>
+                <div class="mb-3">
+                    <label for="txtFechaHora" class="form-label">Fecha y Hora:</label>
+                    <input type="datetime-local" id="txtFechaHora" class="form-control" />
+                </div>
+                <div class="mb-3">
+                    <label for="txtUbicacion" class="form-label">Ubicación:</label>
+                    <input type="text" id="txtUbicacion" class="form-control" />
+                </div>
+                <div class="mb-3 form-check">
+                    <input type="checkbox" id="chkEstado" class="form-check-input" checked />
+                    <label for="chkEstado" class="form-check-label">Activo</label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-primary" onclick="Guardar()">Guardar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section scripts {
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/responsive/2.4.1/js/dataTables.responsive.min.js"></script>
+    <script>
+        let tablaEntrenamiento;
+        $(document).ready(function() {
+            tablaEntrenamiento = $('#tblEntrenamiento').DataTable({
+                responsive: true,
+                ajax: {
+                    url: '@Url.Action("Listar", "Entrenamiento")',
+                    dataSrc: 'data'
+                },
+                columns: [
+                    { data: 'equipo' },
+                    { data: 'fechaHora' },
+                    { data: 'ubicacion' },
+                    { data: 'estado', render: e => e ? 'Activo' : 'Inactivo' },
+                    {
+                        data: 'entrenamientoId',
+                        render: id =>
+                            `<button class="btn btn-sm btn-primary me-1" onclick="abrirModal(${id})">✎</button>` +
+                            `<button class="btn btn-sm btn-danger" onclick="Eliminar(${id})">🗑</button>`,
+                        orderable: false,
+                        searchable: false,
+                        width: '100px'
+                    }
+                ],
+                dom: 'Bfrtip',
+                buttons: [
+                    { text: 'Agregar Nuevo', className: 'btn btn-success btn-sm', action: () => abrirModal(0) }
+                ]
+            });
+        });
+
+        function abrirModal(id) {
+            $('#txtEntrenamientoId').val(id);
+            $.get('@Url.Action("GetEquipos", "Entrenamiento")', function(data) {
+                const ddl = $('#ddlEquipo').empty().append('<option value="">--Seleccione--</option>');
+                data.forEach(eq => ddl.append(`<option value='${eq.equipoId}'>${eq.nombre}</option>`));
+
+                if (id) {
+                    $.get(`@Url.Action("Obtener", "Entrenamiento")?id=${id}`, function(e) {
+                        ddl.val(e.equipoId);
+                        $('#txtFechaHora').val(e.fechaHora);
+                        $('#txtUbicacion').val(e.ubicacion);
+                        $('#chkEstado').prop('checked', e.estado);
+                    });
+                } else {
+                    ddl.val('');
+                    $('#txtFechaHora').val('');
+                    $('#txtUbicacion').val('');
+                    $('#chkEstado').prop('checked', true);
+                }
+                bootstrap.Modal.getOrCreateInstance(document.getElementById('FormModal')).show();
+            });
+        }
+
+        function Guardar() {
+            const model = {
+                entrenamientoId: parseInt($('#txtEntrenamientoId').val()),
+                equipoId:        parseInt($('#ddlEquipo').val()) || null,
+                fechaHora:       $('#txtFechaHora').val(),
+                ubicacion:       $('#txtUbicacion').val(),
+                estado:          $('#chkEstado').is(':checked')
+            };
+            $.ajax({
+                url: '@Url.Action("Guardar", "Entrenamiento")',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(model),
+                success: function(res) {
+                    if (res.resultado) {
+                        tablaEntrenamiento.ajax.reload();
+                        bootstrap.Modal.getOrCreateInstance(document.getElementById('FormModal')).hide();
+                    } else {
+                        alert('No se pudo guardar la sesión');
+                    }
+                }
+            });
+        }
+
+        function Eliminar(id) {
+            if (!confirm('¿Eliminar esta sesión?')) return;
+            $.get(`@Url.Action("Eliminar", "Entrenamiento")?id=${id}`, function(res) {
+                if (res.resultado) tablaEntrenamiento.ajax.reload(); else alert('No se pudo eliminar');
+            });
+        }
+    </script>
+}

@@ -1,0 +1,213 @@
+﻿@{
+    ViewData["Title"] = "Equipos";
+    Layout = "_Layout";
+}
+
+<!-- DataTables CSS -->
+<link rel="stylesheet"
+      href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css" />
+<link rel="stylesheet"
+      href="https://cdn.datatables.net/responsive/2.4.1/css/responsive.dataTables.min.css" />
+
+<div class="row m-4">
+    <div class="col-sm-12">
+        <div class="card">
+            <div class="card-header">Administración de Equipos</div>
+            <div class="card-body">
+                <button class="btn btn-success btn-sm mb-3"
+                        onclick="abrirModalEquipo(0)">
+                    Agregar Nuevo
+                </button>
+                <table id="tblEquipo"
+                       class="display nowrap"
+                       style="width:100%">
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Liga</th>
+                            <th>Entrenador</th>
+                            <th>Activo</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Equipo -->
+<div class="modal fade"
+     id="FormModalEquipo"
+     tabindex="-1"
+     aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Equipo</h5>
+                <button type="button"
+                        class="btn-close"
+                        data-bs-dismiss="modal"
+                        aria-label="Close">
+                </button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="txtEquipoId" />
+                <div class="mb-3">
+                    <label for="txtNombre" class="form-label">Nombre:</label>
+                    <input type="text"
+                           id="txtNombre"
+                           class="form-control" />
+                </div>
+                <div class="mb-3">
+                    <label for="ddlLiga" class="form-label">Liga:</label>
+                    <select id="ddlLiga"
+                            class="form-select">
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="txtEntrenador" class="form-label">Entrenador:</label>
+                    <input type="text"
+                           id="txtEntrenador"
+                           class="form-control" />
+                </div>
+                <div class="form-check mt-3">
+                    <input type="checkbox"
+                           class="form-check-input"
+                           id="chkEstadoEquipo"
+                           checked />
+                    <label class="form-check-label"
+                           for="chkEstadoEquipo">
+                        Activo
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button"
+                        class="btn btn-secondary"
+                        data-bs-dismiss="modal">
+                    Cerrar
+                </button>
+                <button type="button"
+                        class="btn btn-primary"
+                        onclick="GuardarEquipo()">
+                    Guardar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section scripts {
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/responsive/2.4.1/js/dataTables.responsive.min.js"></script>
+    <script>
+        let tablaEquipo;
+        let ligas = [];
+
+        $(document).ready(function() {
+          $.get('@Url.Action("GetLigas", "Equipo")', data => ligas = data);
+
+          tablaEquipo = $('#tblEquipo').DataTable({
+            responsive: true,
+            ajax: {
+              url: '@Url.Action("Listar", "Equipo")',
+              dataSrc: 'data',
+              error: xhr => {
+                console.error('Error Ajax Equipo/Listar:', xhr.responseText);
+                alert('Error cargando equipos');
+              }
+            },
+            columns: [
+              { data: 'nombre' },
+              { data: 'ligaNombre' },
+              { data: 'entrenador' },
+              { data: 'estado', render: e => e ? 'Sí' : 'No' },
+              {
+                data: 'equipoId',
+                render: id =>
+                  `<button class='btn btn-sm btn-primary me-1' onclick='abrirModalEquipo(${id})'>✎</button>` +
+                  `<button class='btn btn-sm btn-danger' onclick='EliminarEquipo(${id})'>🗑</button>`,
+                orderable: false,
+                searchable: false,
+                width: '100px'
+              }
+            ],
+            dom: 'Bfrtip',
+            buttons: [
+              {
+                text: 'Agregar Nuevo',
+                className: 'btn btn-success btn-sm',
+                action: () => abrirModalEquipo(0)
+              }
+            ]
+          });
+        });
+
+        function abrirModalEquipo(id) {
+          $('#txtEquipoId').val(id);
+
+          const ddl = $('#ddlLiga')
+            .empty()
+            .append('<option value="">--Seleccione--</option>');
+          ligas.forEach(l => ddl.append(`<option value='${l.ligaId}'>${l.nombre}</option>`));
+
+          if (id !== 0) {
+            $.get(`@Url.Action("Obtener", "Equipo")?id=${id}`, data => {
+              $('#txtNombre').val(data.nombre);
+              $('#ddlLiga').val(data.ligaId);
+              $('#txtEntrenador').val(data.entrenador);
+              $('#chkEstadoEquipo').prop('checked', data.estado);
+            });
+          } else {
+            $('#txtNombre,#txtEntrenador').val('');
+            ddl.val('');
+            $('#chkEstadoEquipo').prop('checked', true);
+          }
+
+          bootstrap.Modal
+            .getOrCreateInstance(document.getElementById('FormModalEquipo'))
+            .show();
+        }
+
+        function GuardarEquipo() {
+          const model = {
+            equipoId: parseInt($('#txtEquipoId').val()),
+            nombre: $('#txtNombre').val(),
+            ligaId: parseInt($('#ddlLiga').val()) || null,
+            entrenador: $('#txtEntrenador').val(),
+            estado: $('#chkEstadoEquipo').is(':checked')
+          };
+
+          $.ajax({
+            url: '@Url.Action("Guardar", "Equipo")',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(model),
+            success: res => {
+              if (res.resultado) {
+                tablaEquipo.ajax.reload();
+                bootstrap.Modal
+                  .getOrCreateInstance(document.getElementById('FormModalEquipo'))
+                  .hide();
+              } else {
+                alert('No se pudo guardar el equipo');
+              }
+            },
+            error: err => console.error('Error al guardar equipo:', err)
+          });
+        }
+
+        function EliminarEquipo(id) {
+          if (!confirm('¿Eliminar este equipo?')) return;
+          $.get(`@Url.Action("Eliminar", "Equipo")?id=${id}`, res => {
+            if (res.resultado) {
+              tablaEquipo.ajax.reload();
+            } else {
+              alert('No se pudo eliminar');
+            }
+          });
+        }
+    </script>
+}

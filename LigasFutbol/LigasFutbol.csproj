@@ -12,18 +12,8 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Data.SqlClient" Version="6.0.1" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Views\Liga\" />
-    <Folder Include="Views\Equipo\" />
-    <Folder Include="Views\Jugador\" />
-    <Folder Include="Views\Estadistica\" />
-    <Folder Include="Views\Clasificacion\" />
-    <Folder Include="Views\Entrenamiento\" />
-    <Folder Include="Views\Informe\" />
-    <Folder Include="Views\Resultado\" />
-    <Folder Include="Views\Partido\" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.4" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="9.0.4" />
   </ItemGroup>
 
 </Project>
