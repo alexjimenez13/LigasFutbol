@@ -1,0 +1,68 @@
+﻿@model LigasFutbol.Models.Usuario
+
+@{
+    ViewData["Title"] = "Iniciar sesión";
+    Layout = "~/Views/Shared/_LayoutIngreso.cshtml";
+}
+
+<section class="container mt-5">
+    <form asp-controller="Usuario"
+          asp-action="Login"
+          method="post"
+          class="row justify-content-center">
+        @Html.AntiForgeryToken()
+
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+        <div class="col-md-6">
+            <div class="card shadow">
+                <div class="card-header bg-dark text-white text-center">
+                    <h4>@ViewData["Title"]</h4>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label asp-for="NOMBRE_USUARIO" class="form-label"></label>
+                        <input asp-for="NOMBRE_USUARIO"
+                               class="form-control"
+                               placeholder="Ingresa tu usuario" />
+                        <span asp-validation-for="NOMBRE_USUARIO"
+                              class="text-danger small"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="CONTRASENA" class="form-label"></label>
+                        <input asp-for="CONTRASENA"
+                               type="password"
+                               class="form-control"
+                               placeholder="Ingresa tu contraseña" />
+                        <span asp-validation-for="CONTRASENA"
+                              class="text-danger small"></span>
+                    </div>
+
+                    <button type="submit" class="btn btn-dark w-100">Ingresar</button>
+                </div>
+            </div>
+
+            <div class="text-center mt-4">
+                <p>
+                    ¿Olvidaste tu contraseña?
+                    <a asp-controller="Usuario"
+                       asp-action="OlvidoContraseña">
+                        Recuperar aquí
+                    </a>
+                </p>
+                <p>
+                    ¿No tienes cuenta?
+                    <a asp-controller="Usuario"
+                       asp-action="Registro">
+                        Regístrate aquí
+                    </a>
+                </p>
+            </div>
+        </div>
+    </form>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

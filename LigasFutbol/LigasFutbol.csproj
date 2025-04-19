@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="wwwroot\Imagenes\cancha.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="6.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Views\Liga\" />
+    <Folder Include="Views\Equipo\" />
+    <Folder Include="Views\Jugador\" />
+    <Folder Include="Views\Estadistica\" />
+    <Folder Include="Views\Clasificacion\" />
+    <Folder Include="Views\Entrenamiento\" />
+    <Folder Include="Views\Informe\" />
+    <Folder Include="Views\Resultado\" />
+    <Folder Include="Views\Partido\" />
+  </ItemGroup>
+
+</Project>
