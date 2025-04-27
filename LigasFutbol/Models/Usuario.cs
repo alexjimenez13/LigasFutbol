@@ -33,7 +33,7 @@ namespace LigasFutbol.Models
         [StringLength(255)]
         public string CONTRASENA { get; set; }
 
-        [StringLength(255)]
-        public string TOKEN_RECUPERACION { get; set; }
+        //[StringLength(255)]
+        //public string TOKEN_RECUPERACION { get; set; }
     }
 }

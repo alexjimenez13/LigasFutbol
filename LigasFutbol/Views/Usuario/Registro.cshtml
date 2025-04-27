@@ -1,0 +1,65 @@
+﻿@model LigasFutbol.Models.Usuario
+
+@{
+    ViewData["Title"] = "Registro";
+    Layout = "_LayoutIngreso"; // Si tu layout está en /Views/Shared/_LayoutIngreso.cshtml
+}
+
+<form asp-action="Registro" asp-controller="Usuario" method="post" class="needs-validation" novalidate>
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <div class="card shadow">
+                    <div class="card-header bg-dark text-white text-center">
+                        <h4>Registro</h4>
+                    </div>
+                    <div class="card-body">
+                        <div asp-validation-summary="All" class="text-danger mb-3"></div>
+
+                        <div class="mb-3">
+                            <label asp-for="NOMBRE_USUARIO" class="form-label">Nombre de usuario</label>
+                            <input asp-for="NOMBRE_USUARIO" class="form-control" placeholder="Ingrese su nombre de usuario" required />
+                            <span asp-validation-for="NOMBRE_USUARIO" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="CORREO" class="form-label">Correo electrónico</label>
+                            <input asp-for="CORREO" class="form-control" placeholder="Ingrese su correo electrónico" required />
+                            <span asp-validation-for="CORREO" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="NOMBRE" class="form-label">Nombre</label>
+                            <input asp-for="NOMBRE" class="form-control" placeholder="Ingrese su nombre" required />
+                            <span asp-validation-for="NOMBRE" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="PRIMER_APELLIDO" class="form-label">Primer Apellido</label>
+                            <input asp-for="PRIMER_APELLIDO" class="form-control" placeholder="Ingrese su primer apellido" required />
+                            <span asp-validation-for="PRIMER_APELLIDO" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="SEGUNDO_APELLIDO" class="form-label">Segundo Apellido</label>
+                            <input asp-for="SEGUNDO_APELLIDO" class="form-control" placeholder="Ingrese su segundo apellido" required />
+                            <span asp-validation-for="SEGUNDO_APELLIDO" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="CONTRASENA" class="form-label">Contraseña</label>
+                            <input asp-for="CONTRASENA" class="form-control" placeholder="Ingrese su contraseña" type="password" required />
+                            <span asp-validation-for="CONTRASENA" class="text-danger"></span>
+                        </div>
+
+                        <button type="submit" class="btn btn-dark w-100">Registrarse</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

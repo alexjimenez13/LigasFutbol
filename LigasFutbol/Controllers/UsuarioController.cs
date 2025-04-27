@@ -91,7 +91,7 @@ namespace LigasFutbol.Controllers
             {
                 con.Open();
                 using (var cmd = new SqlCommand(
-                    @"SELECT TOP 1 Id, NOMBRE, CORREO, NOMBRE_USUARIO, TOKEN_RECUPERACION 
+                    @"SELECT TOP 1 Id, NOMBRE, CORREO, NOMBRE_USUARIO 
                       FROM FUT_USUARIOS 
                       WHERE NOMBRE_USUARIO = @USUARIO AND CONTRASENA = @PASS", con))
                 {
@@ -108,9 +108,9 @@ namespace LigasFutbol.Controllers
                                 NOMBRE = reader.GetString(1),
                                 CORREO = reader.GetString(2),
                                 NOMBRE_USUARIO = reader.GetString(3),
-                                TOKEN_RECUPERACION = reader.IsDBNull(4)
-                                                      ? null
-                                                      : reader.GetString(4)
+                                //TOKEN_RECUPERACION = reader.IsDBNull(4)
+                                //                      ? null
+                                //                      : reader.GetString(4)
                             };
                         }
                     }
@@ -123,8 +123,9 @@ namespace LigasFutbol.Controllers
                 return View();
             }
 
-            HttpContext.Session.SetInt32("UsuarioId", usuario.Id);
-            HttpContext.Session.SetString("NOMBRE_USUARIO", usuario.NOMBRE_USUARIO);
+
+            //HttpContext.Session.SetInt32("UsuarioId", usuario.Id);
+            //HttpContext.Session.SetString("NOMBRE_USUARIO", usuario.NOMBRE_USUARIO);
 
             return RedirectToAction("Index", "Home");
         }
